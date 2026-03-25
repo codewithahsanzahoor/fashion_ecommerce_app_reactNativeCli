@@ -60,8 +60,8 @@ function MyTabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="ProductDetail" component={ProductDetailScreen} />
       <Tab.Screen name="Cart" component={CartScreen} />
+      <Tab.Screen name="Orders" component={OrdersScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
-      <Tab.Screen name="Orders" component={OrdersScreen} options={{ tabBarButton: () => null }} />
     </Tab.Navigator>
   );
 }
