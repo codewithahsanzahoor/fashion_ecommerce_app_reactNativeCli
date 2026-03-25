@@ -3,11 +3,17 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
+// Redux
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { store, persistor } from './src/store';
+
 // Importing screens
 import HomeScreen from './src/screens/HomeScreen';
 import ProductDetailScreen from './src/screens/ProductDetailScreen';
 import CartScreen from './src/screens/CartScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import OrdersScreen from './src/screens/OrdersScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -26,6 +32,8 @@ function MyTabs() {
             iconName = 'shopping-cart';
           } else if (route.name === 'Profile') {
             iconName = 'user';
+          } else if (route.name === 'Orders') {
+            iconName = 'list';
           }
 
           return (
@@ -53,14 +61,19 @@ function MyTabs() {
       <Tab.Screen name="ProductDetail" component={ProductDetailScreen} />
       <Tab.Screen name="Cart" component={CartScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Orders" component={OrdersScreen} options={{ tabBarButton: () => null }} />
     </Tab.Navigator>
   );
 }
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <MyTabs />
-    </NavigationContainer>
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <NavigationContainer>
+          <MyTabs />
+        </NavigationContainer>
+      </PersistGate>
+    </Provider>
   );
 }
