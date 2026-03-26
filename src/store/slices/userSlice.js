@@ -2,15 +2,23 @@ import { createSlice } from '@reduxjs/toolkit';
 import { mockUser } from '../../data/mockData';
 
 const initialState = {
-  profile: mockUser,
+  isLoggedIn: false,
+  profile: null,
 };
 
 const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
+    login: (state, action) => {
+      state.isLoggedIn = true;
+      state.profile = { ...mockUser, ...action.payload };
+    },
+    logout: (state) => {
+      state.isLoggedIn = false;
+      state.profile = null;
+    },
     updateProfile: (state, action) => {
-      // action.payload will be an object containing the keys to update
       state.profile = { ...state.profile, ...action.payload };
     },
     resetProfile: (state) => {
@@ -19,5 +27,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { updateProfile, resetProfile } = userSlice.actions;
+export const { login, logout, updateProfile, resetProfile } = userSlice.actions;
 export default userSlice.reducer;

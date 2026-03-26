@@ -15,32 +15,43 @@ const OrdersScreen = ({ navigation }) => {
     ]);
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.orderCard}>
-      <View style={styles.orderHeader}>
-        <Text style={styles.orderId}>Order #{item.id.replace('ord_', '')}</Text>
-        <Text style={styles.orderDate}>{item.date}</Text>
+  const renderItem = ({ item }) => {
+    // Ensure item.total is a number before using toFixed
+    const formattedTotal = typeof item.total === 'number' 
+      ? item.total.toFixed(2) 
+      : parseFloat(item.total || 0).toFixed(2);
+
+    const orderIdLabel = item.id && typeof item.id === 'string' 
+      ? item.id.replace('ord_', '') 
+      : 'N/A';
+
+    return (
+      <View style={styles.orderCard}>
+        <View style={styles.orderHeader}>
+          <Text style={styles.orderId}>Order #{orderIdLabel}</Text>
+          <Text style={styles.orderDate}>{item.date}</Text>
+        </View>
+        <View style={styles.orderDetails}>
+          <Text style={styles.orderTotal}>${formattedTotal}</Text>
+          <Text style={[
+            styles.orderStatus, 
+            item.status === 'Pending' ? styles.statusPending : 
+            item.status === 'Cancelled' ? styles.statusCancelled : styles.statusDelivered
+          ]}>
+            {item.status}
+          </Text>
+        </View>
+        <View style={styles.actionRow}>
+          <Text style={styles.itemCount}>{(item.items || []).length} Items</Text>
+          {item.status === 'Pending' && (
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => handleCancel(item.id)}>
+              <Text style={styles.cancelBtnText}>Cancel Order</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
-      <View style={styles.orderDetails}>
-        <Text style={styles.orderTotal}>${item.total.toFixed(2)}</Text>
-        <Text style={[
-          styles.orderStatus, 
-          item.status === 'Pending' ? styles.statusPending : 
-          item.status === 'Cancelled' ? styles.statusCancelled : styles.statusDelivered
-        ]}>
-          {item.status}
-        </Text>
-      </View>
-      <View style={styles.actionRow}>
-        <Text style={styles.itemCount}>{item.items.length} Items</Text>
-        {item.status === 'Pending' && (
-          <TouchableOpacity style={styles.cancelBtn} onPress={() => handleCancel(item.id)}>
-            <Text style={styles.cancelBtnText}>Cancel Order</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>

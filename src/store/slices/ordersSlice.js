@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import { mockOrders } from '../../data/mockData';
 
 const initialState = {
-  ordersList: mockOrders,
+  ordersList: [],
 };
 
 const ordersSlice = createSlice({

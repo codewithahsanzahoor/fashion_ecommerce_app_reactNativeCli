@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-const SearchBar = ({ value, onChangeText, onFilterPress, placeholder = 'Search' }) => {
+const SearchBar = ({ value, onChangeText, placeholder = 'Search' }) => {
   return (
     <View style={styles.searchContainer}>
       <View style={styles.searchBar}>
@@ -15,9 +15,9 @@ const SearchBar = ({ value, onChangeText, onFilterPress, placeholder = 'Search' 
           onChangeText={onChangeText}
         />
       </View>
-      <TouchableOpacity onPress={onFilterPress} style={styles.filterButton}>
+      {/* <TouchableOpacity onPress={onFilterPress} style={styles.filterButton}>
         <Icon name="options-outline" size={20} color="#000" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 };

@@ -11,19 +11,31 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Header from '../components/Header';
 import CustomButton from '../components/CustomButton';
 import { useSelector, useDispatch } from 'react-redux';
-import { removeFromCart } from '../store/slices/cartSlice';
+import { 
+  removeFromCart, 
+  incrementQuantity, 
+  decrementQuantity 
+} from '../store/slices/cartSlice';
 
 const CartScreen = ({ navigation }) => {
   const cartItems = useSelector(state => state.cart.items);
   const dispatch = useDispatch();
 
-  const removeItem = id => {
-    dispatch(removeFromCart(id));
+  const removeItem = cartItemId => {
+    dispatch(removeFromCart(cartItemId));
   };
 
-  const total = cartItems.reduce((sum, item) => sum + item.price, 0).toFixed(1);
-  const shipping = (0.0).toFixed(1);
-  const grandTotal = (parseFloat(total) + parseFloat(shipping)).toFixed(1);
+  const increment = cartItemId => {
+    dispatch(incrementQuantity(cartItemId));
+  };
+
+  const decrement = cartItemId => {
+    dispatch(decrementQuantity(cartItemId));
+  };
+
+  const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
+  const shipping = cartItems.length > 0 ? (5.0).toFixed(2) : (0.0).toFixed(2);
+  const grandTotal = (parseFloat(total) + parseFloat(shipping)).toFixed(2);
 
   const renderItem = ({ item }) => (
     <View style={styles.cartItem}>
@@ -37,7 +49,7 @@ const CartScreen = ({ navigation }) => {
         <Text style={styles.itemName} numberOfLines={1}>
           {item.name}
         </Text>
-        <Text style={styles.itemPrice}>${item.price.toFixed(1)}</Text>
+        <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
 
         <View style={styles.attributesRow}>
           <View
@@ -47,12 +59,24 @@ const CartScreen = ({ navigation }) => {
         </View>
       </View>
 
-      <TouchableOpacity
-        onPress={() => removeItem(item.id)}
-        style={styles.deleteButton}
-      >
-        <Icon name="trash-outline" size={20} color="#E96E6E" />
-      </TouchableOpacity>
+      <View style={styles.rightSection}>
+        <View style={styles.quantityContainer}>
+          <TouchableOpacity onPress={() => decrement(item.cartItemId)} style={styles.quantityBtn}>
+            <Icon name="remove-outline" size={16} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.quantityText}>{item.quantity}</Text>
+          <TouchableOpacity onPress={() => increment(item.cartItemId)} style={styles.quantityBtn}>
+            <Icon name="add-outline" size={16} color="#333" />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => removeItem(item.cartItemId)}
+          style={styles.deleteButton}
+        >
+          <Icon name="trash-outline" size={20} color="#E96E6E" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -61,38 +85,50 @@ const CartScreen = ({ navigation }) => {
       <Header
         leftIconName="chevron-back"
         onLeftPress={() => navigation?.goBack()}
-        onProfilePress={() => console.log('Profile pressed from Cart')}
+        onProfilePress={() => navigation.navigate('Profile')}
         title="My Cart"
       />
 
       <View style={styles.container}>
-        <FlatList
-          data={cartItems}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-        />
+        {cartItems.length > 0 ? (
+          <>
+            <FlatList
+              data={cartItems}
+              renderItem={renderItem}
+              keyExtractor={item => item.cartItemId}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContent}
+            />
 
-        <View style={styles.summaryContainer}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total</Text>
-            <Text style={styles.summaryValue}>${total}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Shipping</Text>
-            <Text style={styles.summaryValue}>${shipping}</Text>
-          </View>
-          <View style={[styles.summaryRow, styles.grandTotalRow]}>
-            <Text style={styles.summaryLabel}>Grand Total</Text>
-            <Text style={styles.grandTotalValue}>${grandTotal}</Text>
-          </View>
+            <View style={styles.summaryContainer}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Subtotal</Text>
+                <Text style={styles.summaryValue}>${total}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Shipping</Text>
+                <Text style={styles.summaryValue}>${shipping}</Text>
+              </View>
+              <View style={[styles.summaryRow, styles.grandTotalRow]}>
+                <Text style={styles.summaryLabel}>Grand Total</Text>
+                <Text style={styles.grandTotalValue}>${grandTotal}</Text>
+              </View>
 
-          <CustomButton
-            title="Checkout"
-            onPress={() => console.log('Proceed to checkout')}
-          />
-        </View>
+              <CustomButton
+                title="Checkout"
+                onPress={() => navigation.navigate('ShippingAddresses')}
+              />
+            </View>
+          </>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Icon name="cart-outline" size={80} color="#DDD" />
+            <Text style={styles.emptyText}>Your cart is empty</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+              <Text style={styles.shopNowText}>Shop Now</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -161,12 +197,41 @@ const styles = StyleSheet.create({
     color: '#555',
     fontWeight: '500',
   },
+  rightSection: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 70,
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 10,
+    padding: 2,
+  },
+  quantityBtn: {
+    padding: 5,
+  },
+  quantityText: {
+    paddingHorizontal: 10,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
   deleteButton: {
-    padding: 8,
-    marginRight: 5,
+    padding: 5,
   },
   summaryContainer: {
     paddingVertical: 20,
+    backgroundColor: '#FFF',
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -193,6 +258,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#999',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  shopNowText: {
+    fontSize: 16,
+    color: '#E96E6E',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
 });
 

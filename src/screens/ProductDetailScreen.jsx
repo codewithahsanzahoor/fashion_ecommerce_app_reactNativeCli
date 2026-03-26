@@ -13,16 +13,28 @@ import SizeSelector from '../components/SizeSelector';
 import ColorSelector from '../components/ColorSelector';
 import CustomButton from '../components/CustomButton';
 
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart } from '../store/slices/cartSlice';
+
+import Icon from 'react-native-vector-icons/FontAwesome';
+import { toggleFavorite } from '../store/slices/favoritesSlice';
+
 const { height } = Dimensions.get('window');
 
 const ProductDetailScreen = ({ route, navigation }) => {
+  const dispatch = useDispatch();
+  const favoriteItems = useSelector((state) => state.favorites.items);
+
   // Use product passed from route params or fallback to default
   const product = route?.params?.product || {
+    id: 'default',
     name: 'Winter Coat',
     price: '$65.9',
     image:
       'https://images.unsplash.com/photo-1539533113208-f6df8cc8b543?q=80&w=1000&auto=format&fit=crop',
   };
+
+  const isFavorite = favoriteItems.some((item) => item.id === product.id);
 
   const sizes = ['S', 'M', 'L', 'XL'];
   const colors = [
@@ -37,6 +49,21 @@ const ProductDetailScreen = ({ route, navigation }) => {
   const [selectedSize, setSelectedSize] = useState('M');
   const [selectedColor, setSelectedColor] = useState(colors[0]);
 
+  const handleAddToCart = () => {
+    dispatch(
+      addToCart({
+        ...product,
+        size: selectedSize,
+        color: selectedColor,
+      })
+    );
+    alert('Added to Cart!');
+  };
+
+  const handleToggleFavorite = () => {
+    dispatch(toggleFavorite(product));
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -48,6 +75,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
           leftIconName="chevron-back"
           onLeftPress={() => navigation.goBack()}
           title={product.name}
+          rightIconName={isFavorite ? 'heart' : 'heart-o'}
+          onRightPress={handleToggleFavorite}
+          rightIconColor={isFavorite ? '#E96E6E' : '#333'}
         />
 
         {/* Product Image */}
@@ -88,7 +118,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
           <View style={styles.buttonContainer}>
             <CustomButton
               title="Add to Cart"
-              onPress={() => console.log('Added to cart:', product.name)}
+              onPress={handleAddToCart}
             />
           </View>
         </View>

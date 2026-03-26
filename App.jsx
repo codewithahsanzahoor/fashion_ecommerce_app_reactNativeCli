@@ -9,7 +9,11 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './src/store';
 
+import { useSelector } from 'react-redux';
+
 // Importing screens
+import LoginScreen from './src/screens/LoginScreen';
+import SignupScreen from './src/screens/SignupScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ProductDetailScreen from './src/screens/ProductDetailScreen';
 import CartScreen from './src/screens/CartScreen';
@@ -19,14 +23,13 @@ import ShippingAddressScreen from './src/screens/ShippingAddressScreen';
 import PaymentMethodsScreen from './src/screens/PaymentMethodsScreen';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 const ProfileStackNav = createNativeStackNavigator();
 
 function ProfileStack() {
   return (
     <ProfileStackNav.Navigator screenOptions={{ headerShown: false }}>
       <ProfileStackNav.Screen name="ProfileMenu" component={ProfileScreen} />
-      <ProfileStackNav.Screen name="ShippingAddresses" component={ShippingAddressScreen} />
-      <ProfileStackNav.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
     </ProfileStackNav.Navigator>
   );
 }
@@ -44,10 +47,10 @@ function MyTabs() {
             iconName = 'th-large';
           } else if (route.name === 'Cart') {
             iconName = 'shopping-cart';
-          } else if (route.name === 'Profile') {
-            iconName = 'user';
           } else if (route.name === 'Orders') {
             iconName = 'list';
+          } else if (route.name === 'Profile') {
+            iconName = 'user';
           }
 
           return (
@@ -80,13 +83,40 @@ function MyTabs() {
   );
 }
 
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Signup" component={SignupScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function AppStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MyTabs} />
+      <Stack.Screen name="ShippingAddresses" component={ShippingAddressScreen} />
+      <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+    </Stack.Navigator>
+  );
+}
+
+const NavigationWrapper = () => {
+  const isLoggedIn = useSelector((state) => state.user.isLoggedIn);
+
+  return (
+    <NavigationContainer>
+      {isLoggedIn ? <AppStack /> : <AuthStack />}
+    </NavigationContainer>
+  );
+};
+
 export default function App() {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <NavigationContainer>
-          <MyTabs />
-        </NavigationContainer>
+        <NavigationWrapper />
       </PersistGate>
     </Provider>
   );

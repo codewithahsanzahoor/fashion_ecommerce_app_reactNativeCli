@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateProfile, resetProfile } from '../store/slices/userSlice';
+import { updateProfile, logout } from '../store/slices/userSlice';
 import Header from '../components/Header';
 
 const ProfileOption = ({ iconName, title, onPress, color = '#333' }) => (
@@ -64,26 +64,19 @@ const ProfileScreen = ({ navigation }) => {
       >
         {/* User Info Section */}
         <View style={styles.userInfoContainer}>
-          <Image
-            source={{ uri: profile.avatar }}
-            style={styles.profileImage}
-          />
+          <Image source={{ uri: profile.avatar }} style={styles.profileImage} />
           {isEditing ? (
             <>
               <TextInput
                 style={styles.editInputName}
                 value={editForm.name}
-                onChangeText={text =>
-                  setEditForm(f => ({ ...f, name: text }))
-                }
+                onChangeText={text => setEditForm(f => ({ ...f, name: text }))}
                 placeholder="Name"
               />
               <TextInput
                 style={styles.editInputEmail}
                 value={editForm.email}
-                onChangeText={text =>
-                  setEditForm(f => ({ ...f, email: text }))
-                }
+                onChangeText={text => setEditForm(f => ({ ...f, email: text }))}
                 placeholder="Email"
                 autoCapitalize="none"
               />
@@ -121,7 +114,7 @@ const ProfileScreen = ({ navigation }) => {
             iconName="log-out-outline"
             title="Log Out"
             color="#E96E6E"
-            onPress={() => dispatch(resetProfile())}
+            onPress={() => dispatch(logout())}
           />
         </View>
       </ScrollView>
