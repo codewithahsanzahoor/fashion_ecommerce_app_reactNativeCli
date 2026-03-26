@@ -30,12 +30,6 @@ const rootReducer = combineReducers({
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-let enhancers = [];
-if (__DEV__) {
-  const reactotron = require('../../ReactotronConfig').default;
-  enhancers.push(reactotron.createEnhancer());
-}
-
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
@@ -44,7 +38,6 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }),
-  enhancers: (getDefaultEnhancers) => getDefaultEnhancers().concat(enhancers),
 });
 
 export const persistor = persistStore(store);
