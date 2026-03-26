@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateProfile } from '../store/slices/userSlice';
+import { updateProfile, resetProfile } from '../store/slices/userSlice';
 import Header from '../components/Header';
 
 const ProfileOption = ({ iconName, title, onPress, color = '#333' }) => (
@@ -54,8 +54,8 @@ const ProfileScreen = ({ navigation }) => {
         title="My Profile"
         leftIconName="chevron-back"
         onLeftPress={() => navigation?.goBack()}
-        rightIconName={isEditing ? "checkmark" : "pencil"}
-        onRightPress={() => isEditing ? handleSave() : setIsEditing(true)}
+        rightIconName={isEditing ? 'checkmark' : 'pencil'}
+        onRightPress={() => (isEditing ? handleSave() : setIsEditing(true))}
       />
 
       <ScrollView
@@ -73,13 +73,17 @@ const ProfileScreen = ({ navigation }) => {
               <TextInput
                 style={styles.editInputName}
                 value={editForm.name}
-                onChangeText={(text) => setEditForm(f => ({ ...f, name: text }))}
+                onChangeText={text =>
+                  setEditForm(f => ({ ...f, name: text }))
+                }
                 placeholder="Name"
               />
               <TextInput
                 style={styles.editInputEmail}
                 value={editForm.email}
-                onChangeText={(text) => setEditForm(f => ({ ...f, email: text }))}
+                onChangeText={text =>
+                  setEditForm(f => ({ ...f, email: text }))
+                }
                 placeholder="Email"
                 autoCapitalize="none"
               />
@@ -102,17 +106,12 @@ const ProfileScreen = ({ navigation }) => {
           <ProfileOption
             iconName="location-outline"
             title="Shipping Addresses"
-            onPress={() => console.log('Shipping Addresses')}
+            onPress={() => navigation.navigate('ShippingAddresses')}
           />
           <ProfileOption
             iconName="card-outline"
             title="Payment Methods"
-            onPress={() => console.log('Payment Methods')}
-          />
-          <ProfileOption
-            iconName="settings-outline"
-            title="Settings"
-            onPress={() => console.log('Settings')}
+            onPress={() => navigation.navigate('PaymentMethods')}
           />
         </View>
 
@@ -122,7 +121,7 @@ const ProfileScreen = ({ navigation }) => {
             iconName="log-out-outline"
             title="Log Out"
             color="#E96E6E"
-            onPress={() => console.log('Log Out')}
+            onPress={() => dispatch(resetProfile())}
           />
         </View>
       </ScrollView>

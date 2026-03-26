@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 // Redux
@@ -14,8 +15,21 @@ import ProductDetailScreen from './src/screens/ProductDetailScreen';
 import CartScreen from './src/screens/CartScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import OrdersScreen from './src/screens/OrdersScreen';
+import ShippingAddressScreen from './src/screens/ShippingAddressScreen';
+import PaymentMethodsScreen from './src/screens/PaymentMethodsScreen';
 
 const Tab = createBottomTabNavigator();
+const ProfileStackNav = createNativeStackNavigator();
+
+function ProfileStack() {
+  return (
+    <ProfileStackNav.Navigator screenOptions={{ headerShown: false }}>
+      <ProfileStackNav.Screen name="ProfileMenu" component={ProfileScreen} />
+      <ProfileStackNav.Screen name="ShippingAddresses" component={ShippingAddressScreen} />
+      <ProfileStackNav.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+    </ProfileStackNav.Navigator>
+  );
+}
 
 function MyTabs() {
   return (
@@ -61,7 +75,7 @@ function MyTabs() {
       <Tab.Screen name="ProductDetail" component={ProductDetailScreen} />
       <Tab.Screen name="Cart" component={CartScreen} />
       <Tab.Screen name="Orders" component={OrdersScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator>
   );
 }
