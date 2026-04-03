@@ -1,42 +1,60 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Header from '../components/Header';
 import CustomButton from '../components/CustomButton';
 import { useDispatch, useSelector } from 'react-redux';
-import { clearCart } from '../store/slices/cartSlice';
-import { addOrder } from '../store/slices/ordersSlice';
-
-const paymentMethods = [
-  { id: '1', label: 'Credit Card', icon: 'card-outline', last4: '4242' },
-  { id: '2', label: 'PayPal', icon: 'logo-paypal', email: 'user@example.com' },
-  { id: '3', label: 'Apple Pay', icon: 'logo-apple', status: 'Enabled' },
-];
+import { setPaymentMethods } from '../store/slices/userSlice';
+import { useAddPaymentMethodMutation } from '../store/slices/userApiSlice';
 
 const PaymentMethodsScreen = ({ route, navigation }) => {
-  const [selectedId, setSelectedId] = useState('1');
   const dispatch = useDispatch();
+  const savedMethods = useSelector(state => state.user.paymentMethods) || [];
+  
+  const [selectedId, setSelectedId] = useState(savedMethods.length > 0 ? savedMethods[0].id : null);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  const [newLabel, setNewLabel] = useState('');
+  const [newCardNo, setNewCardNo] = useState('');
+  const [newExpiry, setNewExpiry] = useState('');
+
   const cartItems = useSelector(state => state.cart.items);
   const { address } = route.params || {};
 
-  const handlePlaceOrder = () => {
-    const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) + 5.0; // Total + Shipping
-    
-    const newOrder = {
-      id: Math.random().toString(36).substr(2, 9),
-      items: cartItems,
-      address,
-      paymentMethod: paymentMethods.find(p => p.id === selectedId).label,
-      total: total.toFixed(2),
-      status: 'Pending',
-      date: new Date().toLocaleDateString(),
-    };
+  const [addPaymentMethod] = useAddPaymentMethodMutation();
 
-    dispatch(addOrder(newOrder));
-    dispatch(clearCart());
+  const handleSaveCard = async () => {
+    if (!newLabel || !newCardNo || !newExpiry) {
+      alert('Please fill out all fields');
+      return;
+    }
+    const cardObj = {
+      id: Math.random().toString(36).substr(2, 9),
+      label: newLabel,
+      icon: 'card-outline',
+      last4: newCardNo.slice(-4)
+    };
     
-    alert('Order Placed Successfully!');
-    navigation.navigate('MainTabs', { screen: 'Orders' });
+    try {
+        const updatedMethods = await addPaymentMethod(cardObj).unwrap();
+        dispatch(setPaymentMethods(updatedMethods));
+        setSelectedId(cardObj.id);
+        
+        // Reset form
+        setNewLabel('');
+        setNewCardNo('');
+        setNewExpiry('');
+        setShowAddForm(false);
+    } catch (error) {
+        alert(error?.data?.message || 'Failed to save payment method');
+    }
+  };
+
+  const handleContinue = () => {
+    navigation.navigate('OrderSummary', {
+      address,
+      paymentMethod: savedMethods.find(p => p.id === selectedId)
+    });
   };
 
   const renderPayment = ({ item }) => (
@@ -59,8 +77,53 @@ const PaymentMethodsScreen = ({ route, navigation }) => {
     </TouchableOpacity>
   );
 
+  const renderHeader = () => (
+    <Text style={styles.sectionTitle}>Choose Payment Method</Text>
+  );
+
+  const renderFooter = () => (
+    <View style={styles.footerWrapper}>
+      {!showAddForm ? (
+        <TouchableOpacity style={styles.addNewBtn} onPress={() => setShowAddForm(true)}>
+          <Icon name="add" size={24} color="#E96E6E" />
+          <Text style={styles.addNewText}>Add New Card</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.formContainer}>
+          <TextInput style={styles.input} placeholder="Cardholder Name (e.g. John Doe)" value={newLabel} onChangeText={setNewLabel} />
+          <TextInput style={styles.input} placeholder="Card Number" value={newCardNo} onChangeText={setNewCardNo} keyboardType="numeric" maxLength={16} />
+          <TextInput style={styles.input} placeholder="Expiry Date (MM/YY)" value={newExpiry} onChangeText={setNewExpiry} maxLength={5} />
+          <View style={styles.formActions}>
+             <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAddForm(false)}>
+               <Text style={styles.cancelBtnText}>Cancel</Text>
+             </TouchableOpacity>
+             <TouchableOpacity style={styles.saveBtn} onPress={handleSaveCard}>
+               <Text style={styles.saveBtnText}>Save</Text>
+             </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.footer}>
+        <CustomButton 
+          title="Review Order" 
+          onPress={() => {
+            if (savedMethods.length === 0 || !selectedId) {
+              alert('Please select or add a payment method first.');
+              return;
+            }
+            handleContinue();
+          }} 
+        />
+      </View>
+    </View>
+  );
+
   return (
-    <View style={styles.safeArea}>
+    <KeyboardAvoidingView 
+      style={styles.safeArea}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <Header
         title="Payment Methods"
         leftIconName="chevron-back"
@@ -68,29 +131,19 @@ const PaymentMethodsScreen = ({ route, navigation }) => {
       />
       
       <View style={styles.container}>
-        <Text style={styles.sectionTitle}>Choose Payment Method</Text>
-        
         <FlatList
-          data={paymentMethods}
+          data={savedMethods}
           renderItem={renderPayment}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
+          ListHeaderComponent={renderHeader()}
+          ListFooterComponent={renderFooter()}
+          ListEmptyComponent={<Text style={styles.emptyText}>No payment methods saved.</Text>}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         />
-
-        <View style={styles.summaryBox}>
-            <Text style={styles.summaryTitle}>Order Summary</Text>
-            <Text style={styles.summaryText}>Items: {cartItems.length}</Text>
-            <Text style={styles.summaryText}>Delivery: {address?.label || 'Not Selected'}</Text>
-        </View>
-
-        <View style={styles.footer}>
-          <CustomButton 
-            title="Place Order" 
-            onPress={handlePlaceOrder} 
-          />
-        </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -98,6 +151,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FDF0F3',
+  },
+  flexOne: {
+    flex: 1,
   },
   container: {
     flex: 1,
@@ -153,27 +209,76 @@ const styles = StyleSheet.create({
     color: '#777',
     marginTop: 2,
   },
-  summaryBox: {
-      backgroundColor: '#FFF',
-      padding: 20,
-      borderRadius: 15,
-      marginTop: 10,
-      borderWidth: 1,
-      borderColor: '#EEE',
-  },
-  summaryTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#333',
-      marginBottom: 10,
-  },
-  summaryText: {
-      fontSize: 14,
-      color: '#555',
-      marginBottom: 5,
-  },
   footer: {
     paddingVertical: 20,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#999',
+    marginTop: 20,
+  },
+  addNewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#E96E6E',
+    borderRadius: 15,
+    marginTop: 5,
+  },
+  addNewText: {
+    color: '#E96E6E',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  formContainer: {
+    backgroundColor: '#FFF',
+    padding: 15,
+    borderRadius: 15,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  input: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    marginBottom: 10,
+    fontSize: 14,
+    color: '#333',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  formActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 5,
+  },
+  cancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    marginRight: 10,
+  },
+  cancelBtnText: {
+    color: '#777',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  saveBtn: {
+    backgroundColor: '#E96E6E',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  saveBtnText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
 

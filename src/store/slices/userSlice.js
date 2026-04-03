@@ -5,6 +5,8 @@ const initialState = {
   isLoggedIn: false,
   profile: null,
   token: null,
+  addresses: [],
+  paymentMethods: [],
 };
 
 const userSlice = createSlice({
@@ -15,6 +17,8 @@ const userSlice = createSlice({
       state.isLoggedIn = true;
       state.token = action.payload.token;
       state.profile = action.payload;
+      state.addresses = action.payload.shippingAddresses || [];
+      state.paymentMethods = action.payload.paymentMethods || [];
     },
     logout: (state) => {
       state.isLoggedIn = false;
@@ -26,9 +30,15 @@ const userSlice = createSlice({
     },
     resetProfile: (state) => {
       state.profile = mockUser;
+    },
+    setAddresses: (state, action) => {
+      state.addresses = action.payload;
+    },
+    setPaymentMethods: (state, action) => {
+      state.paymentMethods = action.payload;
     }
   },
 });
 
-export const { login, logout, updateProfile, resetProfile } = userSlice.actions;
+export const { login, logout, updateProfile, resetProfile, setAddresses, setPaymentMethods } = userSlice.actions;
 export default userSlice.reducer;

@@ -14,6 +14,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
             providesTags: (result, error, id) => [{ type: 'Product', id }],
         }),
     }),
+  overrideExisting: true,
 });
 
 export const { useGetProductsQuery, useGetProductByIdQuery } = productApiSlice;
