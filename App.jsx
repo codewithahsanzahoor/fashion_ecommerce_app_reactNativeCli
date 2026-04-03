@@ -17,10 +17,12 @@ import SignupScreen from './src/screens/SignupScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ProductDetailScreen from './src/screens/ProductDetailScreen';
 import CartScreen from './src/screens/CartScreen';
+import WishlistScreen from './src/screens/WishlistScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import OrdersScreen from './src/screens/OrdersScreen';
 import ShippingAddressScreen from './src/screens/ShippingAddressScreen';
 import PaymentMethodsScreen from './src/screens/PaymentMethodsScreen';
+import OrderSummaryScreen from './src/screens/OrderSummaryScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -43,8 +45,8 @@ function MyTabs() {
 
           if (route.name === 'Home') {
             iconName = 'home';
-          } else if (route.name === 'ProductDetail') {
-            iconName = 'th-large';
+          } else if (route.name === 'Wishlist') {
+            iconName = 'heart';
           } else if (route.name === 'Cart') {
             iconName = 'shopping-cart';
           } else if (route.name === 'Orders') {
@@ -75,7 +77,7 @@ function MyTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="ProductDetail" component={ProductDetailScreen} />
+      <Tab.Screen name="Wishlist" component={WishlistScreen} />
       <Tab.Screen name="Cart" component={CartScreen} />
       <Tab.Screen name="Orders" component={OrdersScreen} />
       <Tab.Screen name="Profile" component={ProfileStack} />
@@ -96,8 +98,10 @@ function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MyTabs} />
+      <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <Stack.Screen name="ShippingAddresses" component={ShippingAddressScreen} />
       <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+      <Stack.Screen name="OrderSummary" component={OrderSummaryScreen} />
     </Stack.Navigator>
   );
 }
