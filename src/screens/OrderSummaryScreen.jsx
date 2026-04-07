@@ -18,10 +18,15 @@ import { useGetCartQuery } from '../store/slices/cartApiSlice';
 import { useCreateOrderMutation } from '../store/slices/orderApiSlice';
 
 const OrderSummaryScreen = ({ navigation, route }) => {
-    const { address: paramAddress, paymentMethod: paramPaymentMethod } = route.params || {};
-    
-    const [selectedAddress, setSelectedAddress] = useState(paramAddress || null);
-    const [paymentType, setPaymentType] = useState(paramPaymentMethod ? 'Card' : 'Card'); // Default to Card
+    const { address: paramAddress, paymentMethod: paramPaymentMethod } =
+        route.params || {};
+
+    const [selectedAddress, setSelectedAddress] = useState(
+        paramAddress || null,
+    );
+    const [paymentType, setPaymentType] = useState(
+        paramPaymentMethod ? 'Card' : 'Card',
+    ); // Default to Card
     const [isPayLoading, setIsPayLoading] = useState(false);
     const [isAddressSheetVisible, setIsAddressSheetVisible] = useState(false);
 
@@ -59,9 +64,10 @@ const OrderSummaryScreen = ({ navigation, route }) => {
                 }).unwrap();
 
             // Ensure address is in object format for Stripe
-            const stripeAddress = typeof selectedAddress?.address === 'object' 
-                ? selectedAddress.address 
-                : { line1: selectedAddress?.address || '' };
+            const stripeAddress =
+                typeof selectedAddress?.address === 'object'
+                    ? selectedAddress.address
+                    : { line1: selectedAddress?.address || '' };
 
             const { error } = await initPaymentSheet({
                 merchantDisplayName: 'Fashion App',
@@ -95,7 +101,7 @@ const OrderSummaryScreen = ({ navigation, route }) => {
             setSelectedAddress({
                 name: stripeAddress.name,
                 // Store both structured and formatted address
-                address: stripeAddress.address, 
+                address: stripeAddress.address,
                 formattedAddress: `${stripeAddress.address.line1}, ${stripeAddress.address.city}, ${stripeAddress.address.country}`,
                 phone: stripeAddress.phone,
                 label: 'Shipping Address',
@@ -144,7 +150,8 @@ const OrderSummaryScreen = ({ navigation, route }) => {
         const orderData = {
             items: formattedItems,
             shippingAddress: {
-                address: selectedAddress.formattedAddress || selectedAddress.address,
+                address:
+                    selectedAddress.formattedAddress || selectedAddress.address,
                 label: selectedAddress.label || 'Shipping Address',
                 phone: selectedAddress.phone,
             },
@@ -214,7 +221,8 @@ const OrderSummaryScreen = ({ navigation, route }) => {
                                 {selectedAddress.name || selectedAddress.label}
                             </Text>
                             <Text style={styles.addressText}>
-                                {selectedAddress.formattedAddress || selectedAddress.address}
+                                {selectedAddress.formattedAddress ||
+                                    selectedAddress.address}
                             </Text>
                             <Text style={styles.addressText}>
                                 {selectedAddress.phone}

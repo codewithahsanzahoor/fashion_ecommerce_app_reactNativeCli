@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Header from '../components/Header';
 import CustomButton from '../components/CustomButton';
 import { useDispatch, useSelector } from 'react-redux';
+import { setPaymentMethods } from '../store/slices/userSlice';
+import { useAddPaymentMethodMutation } from '../store/slices/userApiSlice';
 import { setPaymentMethods } from '../store/slices/userSlice';
 import { useAddPaymentMethodMutation } from '../store/slices/userApiSlice';
 
@@ -28,7 +31,40 @@ const PaymentMethodsScreen = ({ route, navigation }) => {
       return;
     }
     const cardObj = {
+  const [addPaymentMethod] = useAddPaymentMethodMutation();
+
+  const handleSaveCard = async () => {
+    if (!newLabel || !newCardNo || !newExpiry) {
+      alert('Please fill out all fields');
+      return;
+    }
+    const cardObj = {
       id: Math.random().toString(36).substr(2, 9),
+      label: newLabel,
+      icon: 'card-outline',
+      last4: newCardNo.slice(-4)
+    };
+    
+    try {
+        const updatedMethods = await addPaymentMethod(cardObj).unwrap();
+        dispatch(setPaymentMethods(updatedMethods));
+        setSelectedId(cardObj.id);
+        
+        // Reset form
+        setNewLabel('');
+        setNewCardNo('');
+        setNewExpiry('');
+        setShowAddForm(false);
+    } catch (error) {
+        alert(error?.data?.message || 'Failed to save payment method');
+    }
+  };
+
+  const handleContinue = () => {
+    navigation.navigate('OrderSummary', {
+      address,
+      paymentMethod: savedMethods.find(p => p.id === selectedId)
+    });
       label: newLabel,
       icon: 'card-outline',
       last4: newCardNo.slice(-4)
@@ -118,7 +154,53 @@ const PaymentMethodsScreen = ({ route, navigation }) => {
     </View>
   );
 
+  const renderHeader = () => (
+    <Text style={styles.sectionTitle}>Choose Payment Method</Text>
+  );
+
+  const renderFooter = () => (
+    <View style={styles.footerWrapper}>
+      {!showAddForm ? (
+        <TouchableOpacity style={styles.addNewBtn} onPress={() => setShowAddForm(true)}>
+          <Icon name="add" size={24} color="#E96E6E" />
+          <Text style={styles.addNewText}>Add New Card</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.formContainer}>
+          <TextInput style={styles.input} placeholder="Cardholder Name (e.g. John Doe)" value={newLabel} onChangeText={setNewLabel} />
+          <TextInput style={styles.input} placeholder="Card Number" value={newCardNo} onChangeText={setNewCardNo} keyboardType="numeric" maxLength={16} />
+          <TextInput style={styles.input} placeholder="Expiry Date (MM/YY)" value={newExpiry} onChangeText={setNewExpiry} maxLength={5} />
+          <View style={styles.formActions}>
+             <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAddForm(false)}>
+               <Text style={styles.cancelBtnText}>Cancel</Text>
+             </TouchableOpacity>
+             <TouchableOpacity style={styles.saveBtn} onPress={handleSaveCard}>
+               <Text style={styles.saveBtnText}>Save</Text>
+             </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.footer}>
+        <CustomButton 
+          title="Review Order" 
+          onPress={() => {
+            if (savedMethods.length === 0 || !selectedId) {
+              alert('Please select or add a payment method first.');
+              return;
+            }
+            handleContinue();
+          }} 
+        />
+      </View>
+    </View>
+  );
+
   return (
+    <KeyboardAvoidingView 
+      style={styles.safeArea}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
     <KeyboardAvoidingView 
       style={styles.safeArea}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -132,6 +214,7 @@ const PaymentMethodsScreen = ({ route, navigation }) => {
       <View style={styles.container}>
         <FlatList
           data={savedMethods}
+          data={savedMethods}
           renderItem={renderPayment}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
@@ -141,7 +224,14 @@ const PaymentMethodsScreen = ({ route, navigation }) => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         />
+          ListHeaderComponent={renderHeader()}
+          ListFooterComponent={renderFooter()}
+          ListEmptyComponent={<Text style={styles.emptyText}>No payment methods saved.</Text>}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        />
       </View>
+    </KeyboardAvoidingView>
     </KeyboardAvoidingView>
   );
 };
@@ -150,6 +240,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FDF0F3',
+  },
+  flexOne: {
+    flex: 1,
   },
   flexOne: {
     flex: 1,
@@ -226,7 +319,60 @@ const styles = StyleSheet.create({
     borderColor: '#E96E6E',
     borderRadius: 15,
     marginTop: 5,
+  footer: {
+    paddingVertical: 20,
   },
+  emptyText: {
+    textAlign: 'center',
+    color: '#999',
+    marginTop: 20,
+  },
+  addNewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#E96E6E',
+    borderRadius: 15,
+    marginTop: 5,
+  },
+  addNewText: {
+    color: '#E96E6E',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  formContainer: {
+    backgroundColor: '#FFF',
+    padding: 15,
+    borderRadius: 15,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  input: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    marginBottom: 10,
+    fontSize: 14,
+    color: '#333',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  formActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 5,
+  },
+  cancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    marginRight: 10,
   addNewText: {
     color: '#E96E6E',
     fontSize: 16,
@@ -267,7 +413,21 @@ const styles = StyleSheet.create({
     color: '#777',
     fontSize: 14,
     fontWeight: '600',
+  cancelBtnText: {
+    color: '#777',
+    fontSize: 14,
+    fontWeight: '600',
   },
+  saveBtn: {
+    backgroundColor: '#E96E6E',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  saveBtnText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
   saveBtn: {
     backgroundColor: '#E96E6E',
     paddingVertical: 10,
