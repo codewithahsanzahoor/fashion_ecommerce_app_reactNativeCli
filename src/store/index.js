@@ -13,7 +13,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiSlice } from './apiSlice';
 
 import userReducer from './slices/userSlice';
-import cartReducer from './slices/cartSlice';
 import ordersReducer from './slices/ordersSlice';
 
 import loggerMiddleware from './middleware/loggerMiddleware';
@@ -22,13 +21,12 @@ const persistConfig = {
     key: 'root',
     storage: AsyncStorage,
     // We can whitelist or blacklist specific reducers if needed
-    whitelist: ['user', 'cart', 'orders'],
+    whitelist: ['user', 'orders'],
 };
 
 const rootReducer = combineReducers({
     [apiSlice.reducerPath]: apiSlice.reducer,
     user: userReducer,
-    cart: cartReducer,
     orders: ordersReducer,
 });
 

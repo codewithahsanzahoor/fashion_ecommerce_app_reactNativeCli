@@ -18,7 +18,6 @@ const PaymentMethodsScreen = ({ route, navigation }) => {
   const [newCardNo, setNewCardNo] = useState('');
   const [newExpiry, setNewExpiry] = useState('');
 
-  const cartItems = useSelector(state => state.cart.items);
   const { address } = route.params || {};
 
   const [addPaymentMethod] = useAddPaymentMethodMutation();

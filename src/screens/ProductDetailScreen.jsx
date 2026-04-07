@@ -13,8 +13,7 @@ import SizeSelector from '../components/SizeSelector';
 import ColorSelector from '../components/ColorSelector';
 import CustomButton from '../components/CustomButton';
 
-import { useDispatch } from 'react-redux';
-import { addToCart } from '../store/slices/cartSlice';
+import { useAddToCartMutation } from '../store/slices/cartApiSlice';
 
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useGetWishlistQuery, useToggleWishlistMutation } from '../store/slices/wishlistApiSlice';
@@ -22,7 +21,7 @@ import { useGetWishlistQuery, useToggleWishlistMutation } from '../store/slices/
 const { height } = Dimensions.get('window');
 
 const ProductDetailScreen = ({ route, navigation }) => {
-    const dispatch = useDispatch();
+    const [addToCartMutation, { isLoading: isAddingCart }] = useAddToCartMutation();
     const { data: wishlistData } = useGetWishlistQuery();
     const [toggleWishlist] = useToggleWishlistMutation();
 
@@ -54,15 +53,18 @@ const ProductDetailScreen = ({ route, navigation }) => {
     const [selectedSize, setSelectedSize] = useState('M');
     const [selectedColor, setSelectedColor] = useState(colors[0]);
 
-    const handleAddToCart = () => {
-        dispatch(
-            addToCart({
-                ...product,
+    const handleAddToCart = async () => {
+        try {
+            await addToCartMutation({
+                productId,
+                quantity: 1,
                 size: selectedSize,
                 color: selectedColor,
-            }),
-        );
-        alert('Added to Cart!');
+            }).unwrap();
+            alert('Added to Cart!');
+        } catch (err) {
+            alert(err?.data?.message || 'Failed to add to cart');
+        }
     };
 
     const handleToggleFavorite = async () => {
@@ -126,8 +128,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
                     {/* Add to Cart Button */}
                     <View style={styles.buttonContainer}>
                         <CustomButton
-                            title="Add to Cart"
+                            title={isAddingCart ? "Adding..." : "Add to Cart"}
                             onPress={handleAddToCart}
+                            disabled={isAddingCart}
                         />
                     </View>
                 </View>

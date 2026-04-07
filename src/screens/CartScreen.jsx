@@ -6,31 +6,71 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Header from '../components/Header';
 import CustomButton from '../components/CustomButton';
-import { useSelector, useDispatch } from 'react-redux';
 import { 
-  removeFromCart, 
-  incrementQuantity, 
-  decrementQuantity 
-} from '../store/slices/cartSlice';
+  useGetCartQuery, 
+  useUpdateCartItemMutation, 
+  useRemoveFromCartMutation 
+} from '../store/slices/cartApiSlice';
 
 const CartScreen = ({ navigation }) => {
-  const cartItems = useSelector(state => state.cart.items);
-  const dispatch = useDispatch();
+  const { data: cartData, isLoading } = useGetCartQuery();
+  const [updateCartItem] = useUpdateCartItemMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
 
-  const removeItem = cartItemId => {
-    dispatch(removeFromCart(cartItemId));
+  const rawCartItems = cartData?.items || [];
+
+  const cartItems = rawCartItems.map(item => ({
+    ...item,
+    cartItemId: item._id || `${item.productId?._id || item.productId}-${item.size}-${item.color}`,
+    productId: item.productId?._id || item.productId,
+    name: item.productId?.name || 'Unknown Item',
+    price: item.productId?.price || 0,
+    image: item.productId?.image,
+  }));
+
+  const removeItem = async (item) => {
+    try {
+        await removeFromCart({
+            productId: item.productId,
+            size: item.size,
+            color: item.color
+        }).unwrap();
+    } catch (err) {
+        alert(err?.data?.message || 'Failed to remove item');
+    }
   };
 
-  const increment = cartItemId => {
-    dispatch(incrementQuantity(cartItemId));
+  const increment = async (item) => {
+    try {
+        await updateCartItem({
+            productId: item.productId,
+            size: item.size,
+            color: item.color,
+            quantity: item.quantity + 1
+        }).unwrap();
+    } catch(err) {
+        alert(err?.data?.message || 'Failed to update quantity');
+    }
   };
 
-  const decrement = cartItemId => {
-    dispatch(decrementQuantity(cartItemId));
+  const decrement = async (item) => {
+    if (item.quantity > 1) {
+        try {
+            await updateCartItem({
+                productId: item.productId,
+                size: item.size,
+                color: item.color,
+                quantity: item.quantity - 1
+            }).unwrap();
+        } catch(err) {
+            alert(err?.data?.message || 'Failed to update quantity');
+        }
+    }
   };
 
   const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
@@ -61,17 +101,17 @@ const CartScreen = ({ navigation }) => {
 
       <View style={styles.rightSection}>
         <View style={styles.quantityContainer}>
-          <TouchableOpacity onPress={() => decrement(item.cartItemId)} style={styles.quantityBtn}>
+          <TouchableOpacity onPress={() => decrement(item)} style={styles.quantityBtn}>
             <Icon name="remove-outline" size={16} color="#333" />
           </TouchableOpacity>
           <Text style={styles.quantityText}>{item.quantity}</Text>
-          <TouchableOpacity onPress={() => increment(item.cartItemId)} style={styles.quantityBtn}>
+          <TouchableOpacity onPress={() => increment(item)} style={styles.quantityBtn}>
             <Icon name="add-outline" size={16} color="#333" />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          onPress={() => removeItem(item.cartItemId)}
+          onPress={() => removeItem(item)}
           style={styles.deleteButton}
         >
           <Icon name="trash-outline" size={20} color="#E96E6E" />
@@ -90,12 +130,16 @@ const CartScreen = ({ navigation }) => {
       />
 
       <View style={styles.container}>
-        {cartItems.length > 0 ? (
+        {isLoading ? (
+          <View style={styles.emptyContainer}>
+            <ActivityIndicator size="large" color="#E96E6E" />
+          </View>
+        ) : cartItems.length > 0 ? (
           <>
             <FlatList
               data={cartItems}
               renderItem={renderItem}
-              keyExtractor={item => item.cartItemId}
+              keyExtractor={item => String(item.cartItemId)}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.listContent}
             />
@@ -116,7 +160,7 @@ const CartScreen = ({ navigation }) => {
 
               <CustomButton
                 title="Checkout"
-                onPress={() => navigation.navigate('ShippingAddresses')}
+                onPress={() => navigation.navigate('ShippingAddress')}
               />
             </View>
           </>
