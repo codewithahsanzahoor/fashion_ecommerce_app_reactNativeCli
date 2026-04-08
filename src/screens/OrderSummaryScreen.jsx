@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -24,6 +24,7 @@ const OrderSummaryScreen = ({ navigation, route }) => {
     const [paymentType, setPaymentType] = useState(paramPaymentMethod ? 'Card' : 'Card'); // Default to Card
     const [isPayLoading, setIsPayLoading] = useState(false);
     const [isAddressSheetVisible, setIsAddressSheetVisible] = useState(false);
+    const [isPaymentReady, setIsPaymentReady] = useState(false);
 
     const { data: cartData, isLoading: isCartLoading } = useGetCartQuery();
     const rawCartItems = cartData?.items || [];
@@ -52,6 +53,8 @@ const OrderSummaryScreen = ({ navigation, route }) => {
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
     const initializePaymentSheet = async () => {
+        if (!selectedAddress || grandTotal <= 0) return;
+        
         try {
             const { paymentIntent, ephemeralKey, customer } =
                 await createPaymentIntent({
@@ -77,14 +80,22 @@ const OrderSummaryScreen = ({ navigation, route }) => {
 
             if (error) {
                 console.error('Error initializing payment sheet:', error);
-                return false;
+                setIsPaymentReady(false);
+            } else {
+                setIsPaymentReady(true);
             }
-            return true;
         } catch (err) {
             console.error('Error in initializePaymentSheet:', err);
-            return false;
+            setIsPaymentReady(false);
         }
     };
+
+    // Pre-initialize payment sheet when total or address changes
+    useEffect(() => {
+        if (paymentType === 'Card' && grandTotal > 0 && selectedAddress) {
+            initializePaymentSheet();
+        }
+    }, [grandTotal, selectedAddress, paymentType]);
 
     const handleAddressSheet = () => {
         setIsAddressSheetVisible(true);
@@ -110,16 +121,19 @@ const OrderSummaryScreen = ({ navigation, route }) => {
             return;
         }
 
-        setIsPayLoading(true);
-
         if (paymentType === 'Card') {
-            const initialized = await initializePaymentSheet();
-            if (!initialized) {
-                alert('Failed to initialize payment');
-                setIsPayLoading(false);
-                return;
+            if (!isPaymentReady) {
+                // If not ready, try to initialize one last time
+                setIsPayLoading(true);
+                await initializePaymentSheet();
+                if (!isPaymentReady) {
+                    alert('Payment system is not ready. Please try again.');
+                    setIsPayLoading(false);
+                    return;
+                }
             }
 
+            setIsPayLoading(true);
             const { error } = await presentPaymentSheet();
 
             if (error) {
@@ -129,6 +143,8 @@ const OrderSummaryScreen = ({ navigation, route }) => {
                 setIsPayLoading(false);
                 return;
             }
+        } else {
+            setIsPayLoading(true);
         }
 
         const formattedItems = cartItems.map(item => ({
